@@ -24,7 +24,7 @@ def get_cached(driver, url):
     except IOError:
         print 'No cached version found, downloading...'
         # Fetch from web, save
-        page = requests.get(url, headers={'User-agent': 'redditBooks/0.0.1'})
+        page = requests.get(url, headers={'User-agent': 'amanuensis/0.0.1'})
 
         with open(file_path, 'w') as f:
             f.write(page.text.encode('utf8')) # Note that 'text' is the HTML, without headers
