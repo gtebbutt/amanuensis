@@ -86,11 +86,11 @@ def item_to_html(item):
 
     return temp_html.replace(u'<hr>', u'<hr />').replace(u'<br>', u'<br />')
 
-def create_filename(item, count):
-    return u''.join(["{0:03d}".format(count), '-', slugify(item['title']), '.xhtml'])
+def create_filename(item):
+    return u''.join([item['timestamp'].strftime('%Y-%m-%d'), '_', slugify(item['title']), '.xhtml'])
 
-def save_item_html(item, count, path_prefix):
-    f = open(u''.join([path_prefix, create_filename(item, count)]), 'w')
+def save_item_html(item, path_prefix):
+    f = open(u''.join([path_prefix, create_filename(item)]), 'w')
     f.write(item_to_html(item).encode('utf8'))
     f.close()
 
@@ -111,7 +111,7 @@ def create_opf(contents, path_prefix, book_title, book_uid):
                   <manifest>\
                     <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml" />'.format(book_title, book_uid)
 
-    manifest_content = u''.join([u'<item id="{}" href="{}" media-type="application/xhtml+xml" />'.format(create_id(x), create_filename(x, i)) for i, x in enumerate(contents)])
+    manifest_content = u''.join([u'<item id="{}" href="{}" media-type="application/xhtml+xml" />'.format(create_id(x), create_filename(x)) for x in contents])
 
     manifest_spine = u'</manifest><spine toc="ncx">'
 
@@ -146,7 +146,7 @@ def create_ncx(contents, path_prefix, book_title, book_uid):
                                     <text>{}</text>\
                                 </navLabel>\
                                 <content src="{}"/>\
-                            </navPoint>'.format(create_id(x), i, x['title'], create_filename(x, i)) for i, x in enumerate(contents)])
+                            </navPoint>'.format(create_id(x), i, x['title'], create_filename(x)) for i, x in enumerate(contents)])
 
     ncx_close = u'</navMap></ncx>'
 
@@ -157,8 +157,8 @@ def create_ncx(contents, path_prefix, book_title, book_uid):
 
 def build_epub(contents, path_prefix, book_title, book_uid):
     print 'Building ePub'
-    for i, item in enumerate(contents):
-        save_item_html(item, i, path_prefix)
+    for item in contents:
+        save_item_html(item, path_prefix)
     create_opf(contents, path_prefix, book_title, book_uid)
     create_ncx(contents, path_prefix, book_title, book_uid)
     print 'Successfully built ePub'
