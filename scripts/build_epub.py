@@ -10,6 +10,7 @@ from slugify import slugify
 from bs4 import BeautifulSoup
 
 CACHE_PATH_PREFIX = 'cache/'
+HTML_PARSER = 'html.parser'
 
 def get_cached(url):
     url_hash = hashlib.md5(url).hexdigest()
@@ -19,7 +20,7 @@ def get_cached(url):
         # Try opening file to see if it exists
         with open(file_path, 'r') as f:
             # Parse with BeautifulSoup if so
-            return BeautifulSoup(f.read().decode('utf8'), 'lxml')
+            return BeautifulSoup(f.read().decode('utf8'), HTML_PARSER)
     except IOError:
         print 'No cached version found, downloading...'
         # Fetch from web, save
@@ -63,27 +64,20 @@ def process_item(item):
     return item
 
 def item_to_html(item):
-    html_open = u'<?xml version="1.0" encoding="utf-8"?>\
-                <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"\
-                  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\
-                \
-                <html xmlns="http://www.w3.org/1999/xhtml">\
-                <head>\
-                  <title>' + item['title'] + '</title>\
-                </head>\
-                \
-                <body>'
+    html = None
+    with open('epub/template/OEBPS/chapter_template.xhtml', 'r') as f:
+        html = BeautifulSoup(f.read().decode('utf8'), HTML_PARSER)
 
-    html_close = u'</body></html>'
+    html.find('title').string = item['title']
+    html.find('h1').string = item['title']
+    html.find(class_='author').string = item['author']
 
-    temp_html = u''.join([html_open,
-                          '<h1>', item['title'], '</h1>',
-                          '<p>by ', item['author'], '</p>',
-                          '<div id="main-body">', item['main_body'], '</div>',
-                          '<div id="comments">', u''.join(item['comment_body']), '</div>',
-                          html_close])
+    main_body = html.find(id='main-body')
+    main_body.append(BeautifulSoup(item['main_body'], HTML_PARSER))    
+    for comment in item['comment_body']:
+        main_body.append(BeautifulSoup(comment, HTML_PARSER))
 
-    return temp_html.replace(u'<hr>', u'<hr />').replace(u'<br>', u'<br />')
+    return unicode(html)
 
 def create_filename(item):
     return u''.join([item['timestamp'].strftime('%Y-%m-%d'), '_', slugify(item['title']), '.xhtml'])
