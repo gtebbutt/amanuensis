@@ -1,0 +1,112 @@
+body
+{
+   color: black;
+   background-color: white;
+   font-family: Georgia, serif;
+   line-height: 1.4em;
+   text-align: left;
+   text-indent: 0em;
+   border: 0 none;
+   margin: 0em;
+   padding: 1em;
+   text-align: justify;
+}
+
+#main-body
+{
+   margin-top: 2em;
+   margin-bottom: 6em;
+}
+
+.author
+{
+	color: gray;
+}
+
+.centered
+{
+	text-align: center;
+	margin-top: 1em;
+	margin-bottom: 1em;
+	font-size: 2.0em;
+	font-weight: bold;
+}
+
+h1
+{
+   font-size: 1.5em;
+   line-height: 1em;
+   font-weight: bold;
+   margin-top: 0em;
+   margin-bottom: 0.1em;
+}
+
+p
+{
+   text-indent: 0em;
+   margin-top: 0.5em;
+   margin-bottom: 0.5em;
+}
+
+pre
+{
+   font-family: monospace;
+   font-size: 0.85em;
+   line-height: 1.2em;
+   text-align: left;
+   white-space: pre-wrap;
+   margin-top: 1em;
+   margin-bottom: 1em;
+   padding: 1.5em;
+   border: 1px black solid;
+}
+
+ol, ul
+{
+   margin: 0.5em 2em 2em 3em;
+   padding: 0em;
+}
+
+dl
+{
+   margin: 0.5em 2em 0.5em 2em;
+}
+
+table
+{
+   font-size: 1em;
+   line-height: 1.4em;
+   margin-top: 1em;
+}
+
+li, dt, dd
+{
+   margin-top: 0.25em;
+   margin-bottom: 0.25em;
+}
+
+dt
+{
+   font-weight: bold;
+}
+
+a
+{
+    color: #02e;
+    text-decoration: none;
+    outline: none;
+}
+
+a:link
+{
+    color: #02e;
+    text-decoration: none;
+    outline: none;
+}
+
+a:visited
+{
+    color: #02e;
+    text-decoration: none;
+    outline: none;
+}
