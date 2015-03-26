@@ -6,6 +6,7 @@ import time
 import requests
 import os.path
 import dateutil.parser
+import tidy_html
 from slugify import slugify
 from bs4 import BeautifulSoup
 
@@ -71,7 +72,7 @@ def item_to_html(item):
 
     html.find('title').string = item['title']
     html.find('h1').string = item['title']
-    html.find(class_='author').string = item['author']
+    html.find(class_='author').string = u''.join(['By ', item['author']])
 
     main_body = html.find(id='main-body')
     main_body.append(BeautifulSoup(item['main_body'], HTML_PARSER))    
@@ -85,7 +86,7 @@ def create_filename(item):
 
 def save_item_html(item, path_prefix):
     f = open(u''.join([path_prefix, create_filename(item)]), 'w')
-    f.write(item_to_html(item).encode('utf8'))
+    f.write(tidy_html.process(item_to_html(item)).encode('utf8'))
     f.close()
 
 def create_id(item):
