@@ -7,20 +7,19 @@ import requests
 import os.path
 import dateutil.parser
 from slugify import slugify
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from bs4 import BeautifulSoup
 
 CACHE_PATH_PREFIX = 'cache/'
 
-def get_cached(driver, url):
+def get_cached(url):
     url_hash = hashlib.md5(url).hexdigest()
     file_path = os.path.abspath(u''.join([CACHE_PATH_PREFIX, url_hash]))
 
     try:
         # Try opening file to see if it exists
         with open(file_path, 'r') as f:
-            # Open in webdriver if so
-            driver.get(u''.join([u'file://', file_path]))
+            # Parse with BeautifulSoup if so
+            return BeautifulSoup(f.read().decode('utf8'), 'lxml')
     except IOError:
         print 'No cached version found, downloading...'
         # Fetch from web, save
@@ -32,19 +31,19 @@ def get_cached(driver, url):
         # Rate limiter
         time.sleep(3)
 
-        # Recursive call to actually open in webdriver
-        get_cached(driver, url)
+        # Recursive call to actually return object
+        get_cached(url)
 
-def process_item(driver, item):
+def process_item(item):
     print 'Processing URL: ' + item['url']
 
-    get_cached(driver, item['url'])
-
-    tagline = driver.find_element_by_css_selector('#siteTable .tagline')
-    author = tagline.find_element_by_class_name('author').text
-    timestamp = dateutil.parser.parse(tagline.find_element_by_tag_name('time').get_attribute('datetime'))
-    main_body = driver.find_element_by_css_selector('#siteTable div.md').get_attribute('innerHTML')
-    comments = driver.find_elements_by_css_selector('div.commentarea .entry')
+    parsed_html = get_cached(item['url'])
+    
+    tagline = parsed_html.select('#siteTable .tagline')[0]
+    author = tagline.find(class_='author').text
+    timestamp = dateutil.parser.parse(tagline.find('time')['datetime'])
+    main_body = parsed_html.select('#siteTable div.md')[0].decode_contents(formatter="html")
+    comments = parsed_html.select('div.commentarea .entry')
 
     item['author'] = author
     item['timestamp'] = timestamp
@@ -53,12 +52,12 @@ def process_item(driver, item):
 
     for comment in comments:
         try:
-            comment_author = comment.find_element_by_css_selector('a.author').text
+            comment_author = comment.select('a.author')[0].text
             if comment_author == author:
-                comment_body = comment.find_element_by_css_selector('div.md')
+                comment_body = comment.select('div.md')[0]
                 if len(comment_body.text.split()) > 100:
-                    item['comment_body'].append(comment_body.get_attribute('innerHTML'))
-        except NoSuchElementException:
+                    item['comment_body'].append(comment_body.decode_contents(formatter="html"))
+        except IndexError:
             print 'Empty comment found, continuing'
 
     return item
@@ -180,14 +179,10 @@ def run():
     book_uid = uuid.uuid4()
     book_title = book_info['title']
     contents = book_info['contents']
-
-    try:
-        driver = webdriver.Firefox()
-        # Process everything, downloading individual pages
-        for item in contents:
-            process_item(driver, item)
-    finally:
-        driver.close()
+    
+    # Process everything, downloading individual pages
+    for item in contents:
+        process_item(item)
 
     if contents:
         if args.override_order:
