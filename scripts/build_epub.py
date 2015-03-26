@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 CACHE_PATH_PREFIX = 'cache/'
 HTML_PARSER = 'html.parser'
+XML_PARSER = 'xml'
 
 def get_cached(url):
     url_hash = hashlib.md5(url).hexdigest()
@@ -118,35 +119,27 @@ def create_opf(contents, path_prefix, book_title, book_uid):
         f.write(opf.encode('utf8'))
 
 def create_ncx(contents, path_prefix, book_title, book_uid):
-    ncx_open = u'<?xml version="1.0" encoding="UTF-8"?>\
-                <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">\
-                \
-                <head>\
-                    <meta name="dtb:uid" content="{}"/>\
-                    <meta name="dtb:depth" content="1"/>\
-                    <meta name="dtb:totalPageCount" content="0"/>\
-                    <meta name="dtb:maxPageNumber" content="0"/>\
-                </head>\
-                \
-                <docTitle>\
-                    <text>{}</text>\
-                </docTitle>\
-                \
-                <navMap>'.format(book_uid, book_title)
+    ncx = None
+    with open('epub/template/OEBPS/toc_template.ncx', 'r') as f:
+        ncx = BeautifulSoup(f.read().decode('utf8'), XML_PARSER)
 
-    navpoints = u''.join([u'<navPoint id="{}" playOrder="{}">\
-                                <navLabel>\
-                                    <text>{}</text>\
-                                </navLabel>\
-                                <content src="{}"/>\
-                            </navPoint>'.format(create_id(x), i, x['title'], create_filename(x)) for i, x in enumerate(contents)])
+    ncx.find('meta', attrs={'name': 'dtb:uid'})['content'] = book_uid
+    ncx.find('docTitle').find('text').string = book_title
 
-    ncx_close = u'</navMap></ncx>'
+    nav_map = ncx.find('navMap')
 
-    ncx = u''.join([ncx_open, navpoints, ncx_close])
+    for i, x in enumerate(contents):
+        nav_point = ncx.new_tag('navPoint', id=create_id(x), playOrder=i)
+        nav_label = ncx.new_tag('navLabel')
+        nav_text = ncx.new_tag('text')
+        nav_text.string = x['title']
+        nav_label.append(nav_text)
+        nav_point.append(nav_label)
+        nav_point.append(ncx.new_tag('content', src=create_filename(x)))
+        nav_map.append(nav_point)
 
     with open(u''.join([path_prefix, 'toc.ncx']), 'w') as f:
-        f.write(ncx.encode('utf8'))
+        f.write(ncx.prettify().encode('utf8'))
 
 def build_epub(contents, path_prefix, book_title, book_uid):
     print 'Building ePub'
