@@ -9,6 +9,15 @@ def process(html):
     '''
     Cleanup code kindly contributed by http://www.reddit.com/user/b3iAAoLZOH9Y265cujFh and used (almost) verbatim
     '''
+    # We can't use formal HTML entities. Some readers have trouble showing them
+    # correctly in some contexts. Using the UTF-8 encoded unicode character 
+    # equivalents works across all tested readers.
+    ENT_LQUOT = '“'.decode('utf-8')
+    ENT_RQUOT = '”'.decode('utf-8')
+    ENT_SQUOT = '’'.decode('utf-8')
+    ENT_NDASH = '–'.decode('utf-8')
+    ENT_ELIPS = '⋯'.decode('utf-8')
+    
     purge = []
     break_test = re.compile(r'[^\+.]').search
     underscore_test = re.compile(r'_+')
@@ -16,8 +25,6 @@ def process(html):
     body = parsed_html.find(id='main-body')
 
     if body:
-        purge = []
-        
         # Special cases
         title = parsed_html.find('h1').string
         if title == 'Run, little monster':
@@ -34,7 +41,7 @@ def process(html):
         elif title == 'Deliverance':
             for e in body.find(text = '__').parent.fetchNextSiblings():
                 purge.append(e)
-            
+
         hrs = body('hr')
     
         if hrs:
@@ -76,7 +83,6 @@ def process(html):
                     for c in cruft:
                         purge.append(c)
         
-        # General stuff.
         for e in body('hr'):
             purge.append(e)
         
@@ -98,35 +104,37 @@ def process(html):
             e.decompose()
         
         # A wee bit of typography.
+        ls = ''
+        last_open = False
+        
         for s in body(text=True):
             nt = ''
-            last_open = False
             
             for i in range(len(s)):
-                if s[i] == '"':
-                    if i < 1 or last_open or s[i-1] == ' ' or s[i-1] == '[':
-                        nt += '“'.decode('utf-8')
+                cs = s[i]
+                
+                if cs == '"':
+                    if not last_open or ls == ' ':
+                        nt += ENT_LQUOT
                         last_open = True
                     else:
-                        nt += '”'.decode('utf-8')
+                        nt += ENT_RQUOT
                         last_open = False
                 else:
-                    if s[i] == '\'':
-                        nt += '’'.decode('utf-8')
-                    elif s[i] == '- ':
-                        if i == 0 or (i > 0 and s[i-1] != ' ') or (i + 1 < len(s) and s[i+1] != ' '):
-                            nt += '–'.decode('utf-8')
-                        else:
-                            nt += '—'.decode('utf-8')
+                    if cs == '\'':
+                        nt += ENT_SQUOT
+                    elif cs == '-':
+                        nt += ENT_NDASH
                     else:
-                        nt += s[i]
-                    
-                    last_open = False
+                        nt += cs
+                
+                ls = cs
             
             nt = underscore_test.sub('', nt) # 2014-10-22_humans-dont-make-good-pets-part-16-1
             s.replaceWith(nt)
         
-        # Convert all breaks to centered ellipsis'
+        # Convert all page breaks to a centered ellipsis
+        # and remove any redundant pagebreaks.
         lbrk = None
         
         for brk in body('p'):
@@ -137,10 +145,12 @@ def process(html):
                 else:
                     nbrk = parsed_html.new_tag('div')
                     
-                    nbrk['class'] = 'centered'
-                    nbrk.string = '⋯'.decode('utf-8')
+                    nbrk['class'] = 'pbreak'
+                    nbrk.string = ENT_ELIPS
                     brk.replaceWith(nbrk)
             
             lbrk = brk
 
+    # Don't prettify the output. The introduction of additional whitespace
+    # around inline tags have undesirable layout effects in some readers.
     return unicode(parsed_html)
