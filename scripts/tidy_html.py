@@ -17,7 +17,7 @@ def process(html):
     ENT_SQUOT = '’'.decode('utf-8')
     ENT_NDASH = '–'.decode('utf-8')
     ENT_ELIPS = '⋯'.decode('utf-8')
-    
+
     purge = []
     break_test = re.compile(r'[^\+.]').search
     underscore_test = re.compile(r'_+')
@@ -95,7 +95,7 @@ def process(html):
         
         # Remove blank filler-paragraphs.
         for p in body('p'):
-            if p.text == '&nbsp;':
+            if p.text == '&nbsp;' or not p.text.strip():
                 purge.append(p)
         
         # Remove all unecessary elements.
@@ -147,7 +147,7 @@ def process(html):
                     
                     nbrk['class'] = 'pbreak'
                     nbrk.string = ENT_ELIPS
-                    brk.replaceWith(nbrk)
+                    brk.replace_with(nbrk)
             
             lbrk = brk
 
