@@ -24,7 +24,7 @@ def get_cached(url):
             # Parse with BeautifulSoup if so
             return BeautifulSoup(f.read().decode('utf8'), HTML_PARSER)
     except IOError:
-        print 'No cached version found, downloading...'
+        print 'No cached version found, downloading [{}]...'.format(url_hash)
         # Fetch from web, save
         page = requests.get(url, headers={'User-agent': 'amanuensis/0.0.1'})
 
@@ -35,7 +35,7 @@ def get_cached(url):
         time.sleep(3)
 
         # Recursive call to actually return object
-        get_cached(url)
+        return get_cached(url)
 
 def process_item(item):
     print 'Processing URL: ' + item['url']
